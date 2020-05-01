@@ -13,27 +13,27 @@ pub const Blowfish = struct {
             return error.InvalidKeySizeError;
         }
         var this = Blowfish{};
-        expand_key(&this, key);
+        expandKey(&this, key);
         return this;
     }
 
-    pub fn encrypt_block(self: *const Blowfish, block: *[8]u8) void {
+    pub fn encryptBlock(self: *const Blowfish, block: *[8]u8) void {
         var bpair = @bitCast(Pair, block.*);
         var out = self.encrypt(bpair);
         block.* = @bitCast([8]u8, out);
     }
 
-    pub fn decrypt_block(self: *const Blowfish, block: *[8]u8) void {
+    pub fn decryptBlock(self: *const Blowfish, block: *[8]u8) void {
         var bpair = @bitCast(Pair, block.*);
         var out = self.decrypt(bpair);
         block.* = @bitCast([8]u8, out);
     }
 
-    fn expand_key(self: *Blowfish, key: []const u8) void {
+    fn expandKey(self: *Blowfish, key: []const u8) void {
         @setEvalBranchQuota(2 << 13);
         var key_pos: usize = 0;
         for (self.p) |*val| {
-            val.* ^= next_u32_wrap(key, &key_pos);
+            val.* ^= nextU32Wrapped(key, &key_pos);
         }
         var lr: Pair = .{ .l = 0, .r = 0 };
         var i: u8 = 0;
@@ -58,9 +58,9 @@ pub const Blowfish = struct {
         var i: u8 = 0;
         while (i < 8) : (i += 1) {
             l ^= self.p[2 * i];
-            r ^= self.round_function(l);
+            r ^= self.roundFunction(l);
             r ^= self.p[2 * i + 1];
-            l ^= self.round_function(r);
+            l ^= self.roundFunction(r);
         }
         l ^= self.p[16];
         r ^= self.p[17];
@@ -73,16 +73,16 @@ pub const Blowfish = struct {
         var i: u8 = 8;
         while (i > 0) : (i -= 1) {
             l ^= self.p[2 * i + 1];
-            r ^= self.round_function(l);
+            r ^= self.roundFunction(l);
             r ^= self.p[2 * i];
-            l ^= self.round_function(r);
+            l ^= self.roundFunction(r);
         }
         l ^= self.p[1];
         r ^= self.p[0];
         return Pair{ .l = r, .r = l };
     }
 
-    fn round_function(self: *const Blowfish, x: u32) u32 {
+    fn roundFunction(self: *const Blowfish, x: u32) u32 {
         var a = self.s[0][(x >> 24)];
         var b = self.s[1][(x >> 16) & 0xFF];
         var c = self.s[2][(x >> 8) & 0xFF];
@@ -91,7 +91,7 @@ pub const Blowfish = struct {
     }
 };
 
-fn next_u32_wrap(buf: []const u8, offset: *usize) u32 {
+fn nextU32Wrapped(buf: []const u8, offset: *usize) u32 {
     var v: u32 = 0;
     var i: u32 = 0;
     while (i < 4) : (i += 1) {
